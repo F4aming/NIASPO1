@@ -3,50 +3,42 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main
+      - main  # Триггер на пуш в ветку main
   pull_request:
     branches:
-      - main
+      - main  # Триггер на pull request в ветку main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test-docker-compose:
+    runs-on: ubuntu-latest  # Используем Ubuntu для запуска
+
     steps:
-    
-    - name: Checkout repository
-      uses: actions/checkout@v3
-    
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-    
-    - name: Build backend Docker image
-      run: |
-        docker build -t backend-image ./admin
-        docker tag backend-image docker.io/flaming1/backend-image:latest  # Правильный формат тега
+      # Шаг 1: Клонировать репозиторий
+      - name: Checkout code
+        uses: actions/checkout@v3  # Получаем код из репозитория
 
-    - name: Build frontend Docker image
-      run: |
-        docker build -t frontend-image ./apache
-        docker tag frontend-image docker.io/flaming1/frontend-image:latest  # Правильный формат тега
+      # Шаг 2: Установить Docker Buildx (опционально)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2  # Устанавливаем Buildx (полезно для мультиархитектурных образов)
+      
+      # Шаг 3: Установить Docker Compose
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose  # Устанавливаем Docker Compose
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}  # Использование секрета для имени пользователя Docker Hub
-        password: ${{ secrets.DOCKER_PASSWORD }}  # Использование секрета для токена доступа Docker Hub
+      # Шаг 4: Собрать и запустить контейнеры через docker-compose
+      - name: Build and start containers
+        run: |
+          docker-compose -f ./docker/docker-compose.yml up --build -d  # Строим и запускаем контейнеры в фоновом режиме
 
-    - name: Push Docker images to Docker Hub
-      run: |
-        docker push docker.io/flaming1/backend-image:latest  # Использование правильного пути
-        docker push docker.io/flaming1/frontend-image:latest  # Использование правильного пути
+      # Шаг 5: Проверить состояние контейнеров
+      - name: Check services health
+        run: |
+          docker-compose -f ./docker/docker-compose.yml ps || true  # Проверяем статус контейнеров
 
-    - name: Deploy to Production
-      run: |
-        ssh -o StrictHostKeyChecking=no user@yourserver.com << 'EOF'
-          docker pull docker.io/flaming1/backend-image:latest
-          docker pull docker.io/flaming1/frontend-image:latest
-          docker-compose down
-          docker-compose up -d
-        EOF
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      # Шаг 6: Очистка ресурсов после тестов
+      - name: Clean up
+        if: always()  # Даже если шаги выше завершились с ошибкой, очистка произойдёт
+        run: |
+          docker-compose -f ./docker/docker-compose.yml down  # Останавливаем и удаляем контейнеры

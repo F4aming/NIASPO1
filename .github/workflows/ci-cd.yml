@@ -29,7 +29,7 @@ jobs:
       # Шаг 3: Собрать и запустить docker-compose
       - name: Build and start containers
         run: |
-          docker-compose -f ./docker/docker-compose.yml up --build -d
+          docker-compose -f ./docker-compose.yml up --build -d
 
       # Шаг 4: Проверить состояние контейнеров
       - name: Check services health
@@ -40,4 +40,4 @@ jobs:
       - name: Clean up
         if: always()
         run: |
-          docker-compose -f ./docker/docker-compose.yml down
+          docker-compose -f ./docker-compose.yml down

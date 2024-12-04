@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main  
+      - main
   pull_request:
     branches:
       - main
@@ -22,30 +22,29 @@ jobs:
     - name: Build backend Docker image
       run: |
         docker build -t backend-image ./admin
-        docker tag backend-image ghcr.io/f4aming/backend-image:latest  # Правильный формат тега
+        docker tag backend-image docker.io/flaming1/backend-image:latest  # Правильный формат тега
 
     - name: Build frontend Docker image
       run: |
         docker build -t frontend-image ./apache
-        docker tag frontend-image ghcr.io/f4aming/frontend-image:latest  # Правильный формат тега
+        docker tag frontend-image docker.io/flaming1/frontend-image:latest  # Правильный формат тега
 
-    - name: Log in to GitHub Container Registry
+    - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        username: ${{ secrets.DOCKER_USERNAME }}  # Использование секрета для имени пользователя Docker Hub
+        password: ${{ secrets.DOCKER_PASSWORD }}  # Использование секрета для токена доступа Docker Hub
 
-    - name: Push Docker images
+    - name: Push Docker images to Docker Hub
       run: |
-        docker push ghcr.io/f4aming/backend-image:latest  # Правильный путь
-        docker push ghcr.io/f4aming/frontend-image:latest  # Правильный путь
+        docker push docker.io/flaming1/backend-image:latest  # Использование правильного пути
+        docker push docker.io/flaming1/frontend-image:latest  # Использование правильного пути
 
     - name: Deploy to Production
       run: |
-        # Пример деплоя через SSH
         ssh -o StrictHostKeyChecking=no user@yourserver.com << 'EOF'
-          docker pull ghcr.io/f4aming/backend-image:latest
-          docker pull ghcr.io/f4aming/frontend-image:latest
+          docker pull docker.io/flaming1/backend-image:latest
+          docker pull docker.io/flaming1/frontend-image:latest
           docker-compose down
           docker-compose up -d
         EOF

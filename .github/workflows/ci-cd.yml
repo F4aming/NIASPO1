@@ -3,42 +3,41 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main  # Триггер на пуш в ветку main
+      - main
   pull_request:
     branches:
-      - main  # Триггер на pull request в ветку main
+      - main
 
 jobs:
   test-docker-compose:
-    runs-on: ubuntu-latest  # Используем Ubuntu для запуска
+    runs-on: ubuntu-latest
 
     steps:
       # Шаг 1: Клонировать репозиторий
       - name: Checkout code
-        uses: actions/checkout@v3  # Получаем код из репозитория
+        uses: actions/checkout@v3
 
-      # Шаг 2: Установить Docker Buildx (опционально)
+      # Шаг 2: Установить Docker и Docker Compose
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2  # Устанавливаем Buildx (полезно для мультиархитектурных образов)
-      
-      # Шаг 3: Установить Docker Compose
+        uses: docker/setup-buildx-action@v2
+
       - name: Install Docker Compose
         run: |
           sudo apt-get update
-          sudo apt-get install -y docker-compose  # Устанавливаем Docker Compose
+          sudo apt-get install -y docker-compose
 
-      # Шаг 4: Собрать и запустить контейнеры через docker-compose
+      # Шаг 3: Собрать и запустить docker-compose
       - name: Build and start containers
         run: |
-          docker-compose -f ./docker/docker-compose.yml up --build -d  # Строим и запускаем контейнеры в фоновом режиме
+          docker-compose -f ./docker/docker-compose.yml up --build -d
 
-      # Шаг 5: Проверить состояние контейнеров
+      # Шаг 4: Проверить состояние контейнеров
       - name: Check services health
         run: |
-          docker-compose -f ./docker/docker-compose.yml ps || true  # Проверяем статус контейнеров
+          docker-compose -f ./docker/docker-compose.yml ps || true
 
-      # Шаг 6: Очистка ресурсов после тестов
+      # Шаг 5: Очистить после тестирования
       - name: Clean up
-        if: always()  # Даже если шаги выше завершились с ошибкой, очистка произойдёт
+        if: always()
         run: |
-          docker-compose -f ./docker/docker-compose.yml down  # Останавливаем и удаляем контейнеры
+          docker-compose -f ./docker/docker-compose.yml down

@@ -21,12 +21,12 @@ jobs:
     
     - name: Build backend Docker image
       run: |
-        docker build -t backend-image ./app/backend
+        docker build -t backend-image ./admin
         docker tag backend-image ghcr.io/F4aming/backend-image:latest  # Правильный формат тега
 
     - name: Build frontend Docker image
       run: |
-        docker build -t frontend-image ./public
+        docker build -t frontend-image ./apache
         docker tag frontend-image ghcr.io/F4aming/frontend-image:latest  # Правильный формат тега
 
     - name: Log in to GitHub Container Registry

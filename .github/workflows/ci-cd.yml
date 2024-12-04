@@ -22,12 +22,12 @@ jobs:
     - name: Build backend Docker image
       run: |
         docker build -t backend-image ./admin
-        docker tag backend-image ghcr.io/F4aming/backend-image:latest  # Правильный формат тега
+        docker tag backend-image ghcr.io/f4aming/backend-image:latest  # Правильный формат тега
 
     - name: Build frontend Docker image
       run: |
         docker build -t frontend-image ./apache
-        docker tag frontend-image ghcr.io/F4aming/frontend-image:latest  # Правильный формат тега
+        docker tag frontend-image ghcr.io/f4aming/frontend-image:latest  # Правильный формат тега
 
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v2
@@ -37,15 +37,15 @@ jobs:
 
     - name: Push Docker images
       run: |
-        docker push ghcr.io/F4aming/backend-image:latest  # Правильный путь
-        docker push ghcr.io/F4aming/frontend-image:latest  # Правильный путь
+        docker push ghcr.io/f4aming/backend-image:latest  # Правильный путь
+        docker push ghcr.io/f4aming/frontend-image:latest  # Правильный путь
 
     - name: Deploy to Production
       run: |
         # Пример деплоя через SSH
         ssh -o StrictHostKeyChecking=no user@yourserver.com << 'EOF'
-          docker pull ghcr.io/F4aming/backend-image:latest
-          docker pull ghcr.io/F4aming/frontend-image:latest
+          docker pull ghcr.io/f4aming/backend-image:latest
+          docker pull ghcr.io/f4aming/frontend-image:latest
           docker-compose down
           docker-compose up -d
         EOF

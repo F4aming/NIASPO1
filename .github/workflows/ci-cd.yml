@@ -33,24 +33,8 @@ jobs:
         run: |
           docker-compose ps
 
-  # Этап тестирования
-  test-job:
-    runs-on: ubuntu-latest
-    needs: build-job  # Этот шаг выполняется только после успешного завершения build-job
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Install Docker Compose
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose
-    
-    test-job:
+  # Первый этап тестирования
+  test-job-1:
     runs-on: ubuntu-latest
     needs: build-job  # Этот шаг выполняется только после успешного завершения build-job
 
@@ -66,10 +50,29 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y docker-compose
 
+
+  # Второй этап тестирования
+  test-job-2:
+    runs-on: ubuntu-latest
+    needs: test-job-1  # Этот шаг выполняется только после успешного завершения test-job-1
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
+          
   # Этап деплоя
   deploy-job:
     runs-on: ubuntu-latest
-    needs: test-job  # Этот шаг выполняется только после успешного завершения test-job
+    needs: test-job-2  # Этот шаг выполняется только после успешного завершения test-job-2
 
     steps:
       - name: Checkout code
@@ -87,4 +90,4 @@ jobs:
         run: |
           echo "Starting deployment..."
           sleep 2
-          echo "deployment completed successfully!"
+          echo "Deployment completed successfully!"

@@ -53,12 +53,11 @@ jobs:
 
     - name: Check container logs
       run: |
-        docker-compose logs  # Вывод логов всех контейнеров для диагностики ошибок
+        docker-compose logs  
 
     - name: Run tests
       run: |
-        docker-compose exec app npm test  # Или любая другая команда для запуска тестов в вашем контейнере
-
+        docker-compose exec app npm test  
     - name: Clean up
       run: |
         docker-compose -f ./docker-compose.yml down

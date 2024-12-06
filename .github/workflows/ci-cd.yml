@@ -31,33 +31,38 @@ jobs:
 
   # Этап тестирования (Test)
   test-job:
-    runs-on: ubuntu-latest
-    needs: build-job  # Этот шаг выполняется только после успешного завершения build-job
+  runs-on: ubuntu-latest
+  needs: build-job  # Этот шаг выполняется только после успешного завершения build-job
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
-      - name: Install Docker Compose
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose
+    - name: Install Docker Compose
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y docker-compose
 
-      - name: Start containers for testing
-        run: |
-          docker-compose -f ./docker-compose.yml up -d
+    - name: Start containers for testing
+      run: |
+        docker-compose -f ./docker-compose.yml up -d
+        docker ps  # Вывод списка запущенных контейнеров для проверки
 
-      - name: Run tests
-        run: |
-          # Здесь могут быть команды для запуска тестов, например:
-          docker-compose exec app npm test
+    - name: Check container logs
+      run: |
+        docker-compose logs  # Вывод логов всех контейнеров для диагностики ошибок
 
-      - name: Clean up
-        run: |
-          docker-compose -f ./docker-compose.yml down
+    - name: Run tests
+      run: |
+        docker-compose exec app npm test  # Или любая другая команда для запуска тестов в вашем контейнере
+
+    - name: Clean up
+      run: |
+        docker-compose -f ./docker-compose.yml down
+
 
   # Этап деплоя (Deploy)
   deploy-job:

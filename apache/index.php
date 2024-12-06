@@ -97,8 +97,7 @@ $result = $conn->query($sql);
                  // Форма для обновления количества заказа
                  . "<form method='POST' style='display:inline;'>"
                  . "<input type='hidden' name='update_order_id' value='" . $row['id'] . "'>"
-                 . "Новое количество: <input type='number' name='new_quantity' value='" . $row['quantity'] . "' min='1' required>"
-                 . "<button type='submit'>Обновить заказ</button>"
+                 . "<button type='submit'>Обновить статус</button>"
                  . "</form>"
                  . "</li><br>";
         }

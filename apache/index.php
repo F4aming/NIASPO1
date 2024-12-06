@@ -65,63 +65,48 @@ $result = $conn->query($sql);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Заказы ресторана</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Подключение файла стилей -->
 </head>
 <body>
-    <!-- Заголовок страницы -->
-    <header>
-        <h1>Система заказов ресторана</h1>
-    </header>
-
-    <!-- Основной контейнер -->
-    <div class="container">
-        <!-- Форма добавления нового заказа -->
-        <h2>Добавить новый заказ</h2>
-        <form method="POST">
-            <input type="text" name="customer_name" placeholder="Имя клиента" required><br>
-            <input type="text" name="order_item" placeholder="Наименование блюда" required><br>
-            <input type="number" name="quantity" placeholder="Количество" min="1" required><br>
-            <button type="submit">Добавить заказ</button>
-        </form>
-
-        <!-- Список заказов -->
-        <h2>История статусов заказов</h2>
-        <ul class="order-list">
-        <?php
-        if ($result->num_rows > 0) {
-            while($row = $result->fetch_assoc()) {
-                echo "<li>"
-                     . "<strong>Имя клиента: " . htmlspecialchars($row['customer_name']) . "</strong><br>"
-                     . "Блюдо: " . htmlspecialchars($row['order_item']) . "<br>"
-                     . "Количество: " . htmlspecialchars($row['quantity']) . "<br>"
-                     . "Статус: " . htmlspecialchars($row['status']) . "<br>"
-                     . "<small>Добавлено: " . htmlspecialchars($row['created_at']) . "</small><br><br>"
-
-                     // Кнопка удаления
-                     . "<form method='POST' style='display:inline;'>"
-                     . "<input type='hidden' name='delete_order_id' value='" . $row['id'] . "'>"
-                     . "<button type='submit'>Удалить заказ</button>"
-                     . "</form> "
-
-                     // Кнопка обновления количества
-                     . "<form method='POST' style='display:inline;'>"
-                     . "<input type='hidden' name='update_order_id' value='" . $row['id'] . "'>"
-                     . "<input type='number' name='new_quantity' value='" . htmlspecialchars($row['quantity']) . "' min='1' required>"
-                     . "<button type='submit' class='update'>Обновить количество</button>"
-                     . "</form>"
-                     . "</li>";
-            }
-        } else {
-            echo "<li>Нет заказов.</li>";
+    <h1>Система заказов ресторана</h1>
+    
+    <h2>Добавить новый заказ</h2>
+    <form method="POST">
+        <input type="text" name="customer_name" placeholder="Имя клиента" required><br><br>
+        <input type="text" name="order_item" placeholder="Наименование блюда" required><br><br>
+        <input type="number" name="quantity" placeholder="Количество" min="1" required><br><br>
+        <button type="submit">Добавить заказ</button>
+    </form>
+    
+    <h2>История заказов</h2>
+    <ul>
+    <?php
+    if ($result->num_rows > 0) {
+        while($row = $result->fetch_assoc()) {
+            echo "<li><strong>Имя клиента: " . $row['customer_name'] . "</strong><br>"
+                 . "Блюдо: " . $row['order_item'] . "<br>"
+                 . "Количество: " . $row['quantity'] . "<br>"
+                 . "Статус: " . $row['status'] . "<br>"
+                 . "<small>Добавлено: " . $row['created_at'] . "</small><br>"
+                 
+                 // Форма для удаления заказа
+                 . "<form method='POST' style='display:inline;'>"
+                 . "<input type='hidden' name='delete_order_id' value='" . $row['id'] . "'>"
+                 . "<button type='submit'>Удалить заказ</button>"
+                 . "</form><br>"
+                 
+                 // Форма для обновления количества заказа
+                 . "<form method='POST' style='display:inline;'>"
+                 . "<input type='hidden' name='update_order_id' value='" . $row['id'] . "'>"
+                 . "Новое количество: <input type='number' name='new_quantity' value='" . $row['quantity'] . "' min='1' required>"
+                 . "<button type='submit'>Обновить заказ</button>"
+                 . "</form>"
+                 . "</li><br>";
         }
-        $conn->close();
-        ?>
-        </ul>
-    </div>
-
-    <!-- Футер -->
-    <footer>
-    </footer>
+    } else {
+        echo "Нет заказов.";
+    }
+    $conn->close();
+    ?>
+    </ul>
 </body>
 </html>
-

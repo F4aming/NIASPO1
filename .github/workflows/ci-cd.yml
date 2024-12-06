@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  # Этап сборки (Build)
+  # Этап сборки
   build-job:
     runs-on: ubuntu-latest
 
@@ -25,45 +25,49 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y docker-compose
 
-      - name: Build Docker images
+      - name: Build and start containers
         run: |
-          docker-compose -f ./docker-compose.yml build
+          docker-compose -f ./docker-compose.yml up --build -d
 
-  # Этап тестирования (Test)
+      - name: Check containers status
+        run: |
+          docker-compose ps
+
+  # Этап тестирования
   test-job:
-  runs-on: ubuntu-latest
-  needs: build-job  # Этот шаг выполняется только после успешного завершения build-job
+    runs-on: ubuntu-latest
+    needs: build-job  # Этот шаг выполняется только после успешного завершения build-job
 
-  steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-    - name: Install Docker Compose
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y docker-compose
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
 
-    - name: Start containers for testing
-      run: |
-        docker-compose -f ./docker-compose.yml up -d
-        docker ps  # Вывод списка запущенных контейнеров для проверки
+      - name: Start containers for testing
+        run: |
+          docker-compose -f ./docker-compose.yml up -d
+          docker ps  # Вывод списка запущенных контейнеров для проверки
 
-    - name: Check container logs
-      run: |
-        docker-compose logs  
+      - name: Check container logs
+        run: |
+          docker-compose logs  # Вывод логов всех контейнеров для диагностики ошибок
 
-    - name: Run tests
-      run: |
-        docker-compose exec app npm test  
-    - name: Clean up
-      run: |
-        docker-compose -f ./docker-compose.yml down
+      - name: Run tests
+        run: |
+          docker-compose exec app npm test  # Или любая другая команда для запуска тестов в вашем контейнере
 
+      - name: Clean up
+        run: |
+          docker-compose -f ./docker-compose.yml down
 
-  # Этап деплоя (Deploy)
+  # Этап деплоя
   deploy-job:
     runs-on: ubuntu-latest
     needs: test-job  # Этот шаг выполняется только после успешного завершения test-job
@@ -84,4 +88,4 @@ jobs:
         run: |
           echo "Starting deployment..."
           sleep 2
-          echo "Deployment completed successfully!"
+          echo "deployment completed successfully!"

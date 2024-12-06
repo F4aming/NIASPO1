@@ -59,9 +59,10 @@ jobs:
         run: |
           docker-compose logs  # Вывод логов всех контейнеров для диагностики ошибок
 
-      - name: Run tests
+      - name: Run tests (Python)
         run: |
-          docker-compose exec app npm test  # Или любая другая команда для запуска тестов в вашем контейнере
+          docker-compose exec app pytest  # или docker-compose exec app python -m unittest
+
 
       - name: Clean up
         run: |

@@ -9,15 +9,14 @@ on:
       - main
 
 jobs:
-  test-docker-compose:
+  # Этап сборки (Build)
+  build-job:
     runs-on: ubuntu-latest
 
     steps:
-      # Шаг 1: Клонировать репозиторий
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Шаг 2: Установить Docker и Docker Compose
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -26,18 +25,59 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y docker-compose
 
-      # Шаг 3: Собрать и запустить docker-compose
-      - name: Build and start containers
+      - name: Build Docker images
         run: |
-          docker-compose -f ./docker-compose.yml up --build -d
+          docker-compose -f ./docker-compose.yml build
 
-      # Шаг 4: Проверить состояние контейнеров
-      - name: Check services health
+  # Этап тестирования (Test)
+  test-job:
+    runs-on: ubuntu-latest
+    needs: build-job  # Этот шаг выполняется только после успешного завершения build-job
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Install Docker Compose
         run: |
-          docker-compose -f ./docker/docker-compose.yml ps || true
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
 
-      # Шаг 5: Очистить после тестирования
+      - name: Start containers for testing
+        run: |
+          docker-compose -f ./docker-compose.yml up -d
+
+      - name: Run tests
+        run: |
+          # Здесь могут быть команды для запуска тестов, например:
+          docker-compose exec app npm test
+
       - name: Clean up
-        if: always()
         run: |
           docker-compose -f ./docker-compose.yml down
+
+  # Этап деплоя (Deploy)
+  deploy-job:
+    runs-on: ubuntu-latest
+    needs: test-job  # Этот шаг выполняется только после успешного завершения test-job
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
+      - name: Deploy to server
+        run: |
+          echo "Starting deployment..."
+          sleep 2
+          echo "Deployment completed successfully!"

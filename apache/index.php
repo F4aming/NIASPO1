@@ -21,9 +21,12 @@ $table_creation_query = "
         customer_name VARCHAR(255) NOT NULL,
         order_item VARCHAR(255) NOT NULL,
         quantity INT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        status VARCHAR(20) DEFAULT 'новый', -- Статус заказа
+        ready_at TIMESTAMP NULL DEFAULT NULL, -- Время готовности заказа
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Время создания заказа
     );
 ";
+
 
 if ($conn->query($table_creation_query) === FALSE) {
     die("Ошибка создания таблицы: " . $conn->error);

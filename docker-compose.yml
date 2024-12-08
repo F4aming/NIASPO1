@@ -12,6 +12,19 @@ services:
     ports:
       - "3306:3306"
   
+  user-db:
+    image: mysql:5.7
+    container_name: user-mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: userdbpassword
+      MYSQL_DATABASE: user_registration
+      MYSQL_USER: user_admin
+      MYSQL_PASSWORD: userpassword
+    volumes:
+      - ./user-mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3307:3306"
+
   web:
     build: ./apache
     container_name: apache-php
@@ -21,6 +34,7 @@ services:
       - ./apache:/var/www/html
     depends_on:
       - db
+      - user-db
 
   admin:
     build: ./admin
@@ -31,6 +45,7 @@ services:
       - ./admin:/var/www/html
     depends_on:
       - db
+      - user-db
 
   redis:
     image: redis:latest
@@ -43,6 +58,9 @@ services:
     container_name: adminer
     ports:
       - "8080:8080"
+    depends_on:
+      - db
+      - user-db
 
   queue:
     image: rabbitmq:3-management

@@ -68,6 +68,7 @@ $result_cancelled = $conn->query($sql_cancelled);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./assets/styles.css">
     <title>Admin Panel - Restaurant Orders</title>
 </head>
 <body>

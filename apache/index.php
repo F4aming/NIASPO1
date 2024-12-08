@@ -1,5 +1,7 @@
 <?php
+session_start();
 
+// Подключение к базе данных
 $servername = "db";
 $username = "root";
 $password = "rootpassword";
@@ -11,12 +13,30 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Создание таблицы заказов, если она не существует
+$table_creation_query = "
+    CREATE TABLE IF NOT EXISTS orders (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL, -- Связь с пользователем
+        customer_name VARCHAR(255) NOT NULL,
+        order_item VARCHAR(255) NOT NULL,
+        quantity INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+";
+
+if ($conn->query($table_creation_query) === FALSE) {
+    die("Ошибка создания таблицы: " . $conn->error);
+}
+
+// Проверяем, авторизован ли пользователь
+$is_logged_in = isset($_SESSION['user_id']) && isset($_SESSION['username']);
+$current_user_id = $is_logged_in ? $_SESSION['user_id'] : null;
+
 // Удаление заказа
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_order_id'])) {
     $order_id = (int)$_POST['delete_order_id'];
-    
-    // Удаляем заказ из базы данных
-    $sql = "DELETE FROM orders WHERE id = $order_id";
+    $sql = "DELETE FROM orders WHERE id = $order_id AND user_id = $current_user_id";
     
     if ($conn->query($sql) === TRUE) {
         echo "Заказ удален!";
@@ -30,7 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_order_id'], $_P
     $order_id = (int)$_POST['update_order_id'];
     $new_quantity = (int)$_POST['new_quantity'];
     
-    $sql = "UPDATE orders SET quantity = $new_quantity WHERE id = $order_id";
+    $sql = "UPDATE orders SET quantity = $new_quantity WHERE id = $order_id AND user_id = $current_user_id";
     
     if ($conn->query($sql) === TRUE) {
         echo "Заказ обновлен!";
@@ -44,9 +64,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['customer_name'], $_POS
     $customer_name = $conn->real_escape_string($_POST['customer_name']);
     $order_item = $conn->real_escape_string($_POST['order_item']);
     $quantity = (int)$_POST['quantity'];
-    
-    $sql = "INSERT INTO orders (customer_name, order_item, quantity) VALUES ('$customer_name', '$order_item', $quantity)";
-    
+
+    // Получение user_id текущего пользователя
+    $current_user_id = $_SESSION['user_id']; // Убедитесь, что в сессии хранится user_id
+
+    $sql = "INSERT INTO orders (user_id, customer_name, order_item, quantity) 
+            VALUES ($current_user_id, '$customer_name', '$order_item', $quantity)";
+
     if ($conn->query($sql) === TRUE) {
         echo "Новый заказ добавлен!";
     } else {
@@ -55,10 +79,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['customer_name'], $_POS
 }
 
 // Получение списка заказов
-$sql = "SELECT * FROM orders ORDER BY created_at DESC";
+$sql = "SELECT * FROM orders WHERE user_id = $current_user_id ORDER BY created_at DESC";
 $result = $conn->query($sql);
-
 ?>
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -66,6 +90,7 @@ $result = $conn->query($sql);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Система заказов ресторана</title>
     <style>
+        /* Стили для кнопок и страницы */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
@@ -80,10 +105,10 @@ $result = $conn->query($sql);
             position: relative;
             text-align: center;
         }
-        .registration-button {
+
+        .registration-button, .login-button {
             position: absolute;
             top: 10px;
-            right: 10px;
             background-color: #ffffff;
             color: #4CAF50;
             border: 2px solid #4CAF50;
@@ -94,10 +119,37 @@ $result = $conn->query($sql);
             cursor: pointer;
             transition: all 0.3s;
         }
-        
-        .registration-button:hover {
+
+        .registration-button:hover, .login-button:hover {
             background-color: #4CAF50;
             color: #ffffff;
+        }
+
+        .registration-button {
+            right: 100px;
+        }
+
+        .login-button {
+            right: 10px;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .button-container a {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 0 10px;
+            font-size: 16px;
+        }
+
+        .button-container a:hover {
+            background-color: #45a049;
         }
 
         main {
@@ -171,7 +223,6 @@ $result = $conn->query($sql);
             align-items: center;
         }
 
-        /* Всплывающее окно */
         .modal {
             display: none;
             position: fixed;
@@ -211,123 +262,77 @@ $result = $conn->query($sql);
     </style>
 </head>
 <body>
-    <header>
-        <h1>Система заказов ресторана</h1>
-        <button class="registration-button" onclick="openModal()">Регистрация</button>
-    </header>
-    <main>
-    <h2>Меню</h2>
-        <ul>
-            <li class="menu-item">
-                <img src="https://cdnn21.img.ria.ru/images/98976/61/989766135_0:105:2000:1230_650x0_80_0_0_a0c8ea5459a0ba08e5e4d558e2b19ad3.jpg.webp" 
-                    alt="Пицца" 
-                    data-name="Пицца" 
-                    data-quantity="1" 
-                    onclick="addToOrder(this)">
-                <div>
-                    <strong>Название блюда: Пицца</strong><br>
-                    <small>Цена: 500 рублей</small>
-                </div>
-            </li>
-            <li class="menu-item">
-                <img src="https://static.sushiwok.ru/img/a0e48307a71a9a041c11822a2ccfd4b8" 
-                    alt="Суши" 
-                    data-name="Суши" 
-                    data-quantity="1" 
-                    onclick="addToOrder(this)">
-                <div>
-                    <strong>Название блюда: Суши</strong><br>
-                    <small>Цена: 300 рублей</small>
-                </div>
-            </li>
-            <li class="menu-item">
-                <img src="https://chefrestoran.ru/wp-content/uploads/2022/04/stejk-1024x768.jpeg" 
-                    alt="Стейк" 
-                    data-name="Стейк" 
-                    data-quantity="1" 
-                    onclick="addToOrder(this)">
-                <div>
-                    <strong>Название блюда: Стейк</strong><br>
-                    <small>Цена: 1200 рублей</small>
-                </div>
-            </li>
-        </ul>
 
-<!-- Скрытая форма для отправки данных -->
-        <form id="addOrderForm" method="POST" style="display: none;">
-            <input type="hidden" name="customer_name" value="Гость">
-            <input type="hidden" name="order_item" id="order_item" value="">
-            <input type="hidden" name="quantity" id="quantity" value="1">
-        </form>
-
-
-        <h2>Добавить новый заказ</h2>
-        <form method="POST">
-            <input type="text" name="customer_name" placeholder="Имя клиента" required>
-            <input type="text" name="order_item" placeholder="Наименование блюда" required>
-            <input type="number" name="quantity" placeholder="Количество" min="1" required>
-            <button type="submit">Добавить заказ</button>
-        </form>
-
-        <h2>История заказов</h2>
-        <ul>
-        <?php
-        if ($result->num_rows > 0) {
-            while($row = $result->fetch_assoc()) {
-                echo "<li><strong>Имя клиента: " . $row['customer_name'] . "</strong><br>"
-                     . "Блюдо: " . $row['order_item'] . "<br>"
-                     . "Количество: " . $row['quantity'] . "<br>"
-                     . "Статус: " . $row['status'] . "<br>"
-                     . "<small>Добавлено: " . $row['created_at'] . "</small><br>"
-                     
-                     . "<div class='action-buttons'>"
-                     // Форма для удаления заказа
-                     . "<form method='POST'>"
-                     . "<input type='hidden' name='delete_order_id' value='" . $row['id'] . "'>"
-                     . "<button type='submit'>Удалить заказ</button>"
-                     . "</form>"
-                     
-                     // Форма для обновления количества заказа
-                     . "<form method='POST'>"
-                     . "<input type='hidden' name='update_order_id' value='" . $row['id'] . "'>"
-                     . "Новое количество: <input type='number' name='new_quantity' value='" . $row['quantity'] . "' min='1' required>"
-                     . "<button type='submit' class='update'>Обновить заказ</button>"
-                     . "</form>"
-                     . "</div>"
-                     . "</li>";
-            }
-        } else {
-            echo "<p>Нет заказов.</p>";
-        }
-        $conn->close();
-        ?>
-        </ul>
-    </main>
-
-    <!-- Всплывающее окно -->
-    <div id="registrationModal" class="modal">
-        <div class="modal-content">
-            <button class="close-modal" onclick="closeModal()">X</button>
-            <h3>Регистрация</h3>
-            <form>
-                <input type="text" name="username" placeholder="Имя пользователя" required>
-                <input type="email" name="email" placeholder="Email" required>
-                <input type="password" name="password" placeholder="Пароль" required>
-                <button type="submit">Зарегистрироваться</button>
-            </form>
-        </div>
+<header>
+    <h1>Система заказов ресторана</h1>
+    <div class="button-container">
+        <?php if ($is_logged_in): ?>
+            <a href="logout.php">Выйти</a>
+        <?php else: ?>
+            <a href="login.php">Войти</a>
+            <a href="register.php">Зарегистрироваться</a>
+        <?php endif; ?>
     </div>
+</header>
 
-    <script>
-        function openModal() {
-            document.getElementById('registrationModal').style.display = 'flex';
-        }
+<main>
+    <h2>Меню</h2>
+    <ul>
+        <li class="menu-item">
+            <img src="https://cdnn21.img.ria.ru/images/98976/61/989766135_0:105:2000:1230_650x0_80_0_0_a0c8ea5459a0ba08e5e4d558e2b19ad3.jpg.webp" 
+                 alt="Пицца" data-name="Пицца" data-quantity="1" onclick="addToOrder(this)">
+            <div>
+                <strong>Название блюда: Пицца</strong><br>
+                <small>Цена: 500 рублей</small>
+            </div>
+        </li>
+        <li class="menu-item">
+            <img src="https://static.sushiwok.ru/img/a0e48307a71a9a041c11822a2ccfd4b8" 
+                 alt="Суши" data-name="Суши" data-quantity="1" onclick="addToOrder(this)">
+            <div>
+                <strong>Название блюда: Суши</strong><br>
+                <small>Цена: 300 рублей</small>
+            </div>
+        </li>
+    </ul>
 
-        function closeModal() {
-            document.getElementById('registrationModal').style.display = 'none';
-        }
-    </script>
+    <h2>Ваши заказы</h2>
+    <form method="POST" action="">
+        <input type="text" name="customer_name" placeholder="Ваше имя" required>
+        <input type="text" name="order_item" placeholder="Наименование блюда" required>
+        <input type="number" name="quantity" placeholder="Количество" required>
+        <button type="submit">Добавить заказ</button>
+    </form>
+
+    <h3>Список заказов</h3>
+    <?php if ($result->num_rows > 0): ?>
+        <ul>
+            <?php while($order = $result->fetch_assoc()): ?>
+                <li>
+                    <strong>Заказчик: <?php echo htmlspecialchars($order['customer_name']); ?></strong><br>
+                    Блюдо: <?php echo htmlspecialchars($order['order_item']); ?><br>
+                    Количество: <?php echo htmlspecialchars($order['quantity']); ?><br>
+                    <strong>Статус: <?php echo htmlspecialchars($order['status']); ?></strong><br>
+                    <small>Дата создания: <?php echo $order['created_at']; ?></small><br>
+                    <form method="POST" style="display:inline;">
+                        <input type="hidden" name="update_order_id" value="<?php echo $order['id']; ?>">
+                        <input type="number" name="new_quantity" value="<?php echo $order['quantity']; ?>" required>
+                        <button type="submit">Обновить заказ</button>
+                    </form>
+                    <form method="POST" style="display:inline;">
+                        <input type="hidden" name="delete_order_id" value="<?php echo $order['id']; ?>">
+                        <button type="submit">Удалить заказ</button>
+                    </form>
+                </li>
+            <?php endwhile; ?>
+        </ul>
+    <?php else: ?>
+        <p>Нет заказов</p>
+    <?php endif; ?>
+</main>
+
 </body>
 </html>
-
-
+<?php
+$conn->close();
+?>

@@ -49,5 +49,18 @@ function loadOrders() {
         .catch(error => console.error("Ошибка при загрузке заказов:", error));
 }
 
+function addToOrder(image) {
+        // Получаем данные из атрибутов изображения
+    const orderName = image.getAttribute('data-name');
+    const quantity = image.getAttribute('data-quantity');
+
+        // Заполняем скрытую форму
+    document.getElementById('order_item').value = orderName;
+    document.getElementById('quantity').value = quantity;
+
+        // Автоматически отправляем форму
+    document.getElementById('addOrderForm').submit();
+}
+
 // Загружаем заказы при загрузке страницы
 document.addEventListener("DOMContentLoaded", loadOrders);

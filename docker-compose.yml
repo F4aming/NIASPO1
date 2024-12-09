@@ -6,7 +6,7 @@ services:
     container_name: mysql-db
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: notes_app
+      MYSQL_DATABASE: restaurant_orders
     volumes:
       - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:

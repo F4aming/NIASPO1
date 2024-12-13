@@ -10,7 +10,7 @@ on:
 
 jobs:
   # Этап сборки
-  build-job:
+  build-project:
     runs-on: ubuntu-latest
 
     steps:
@@ -34,9 +34,9 @@ jobs:
           docker-compose ps
 
   # Этап тестирования
-  test-job:
+  test-project:
     runs-on: ubuntu-latest
-    needs: build-job  # Этот шаг выполняется только после успешного завершения build-job
+    needs: build-project  # Этот шаг выполняется только после успешного завершения build-job
 
     steps:
       - name: Checkout code
@@ -51,9 +51,9 @@ jobs:
           sudo apt-get install -y docker-compose
           
   # Этап деплоя
-  deploy-job:
+  deploy-project:
     runs-on: ubuntu-latest
-    needs: test-job  # Этот шаг выполняется только после успешного завершения test-job
+    needs: test-project  # Этот шаг выполняется только после успешного завершения test-job
 
     steps:
       - name: Checkout code
